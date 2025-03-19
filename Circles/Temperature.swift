@@ -1,7 +1,6 @@
 //
 //  Temperature Circle.swift
 //  Circadian
-//
 //  Created by Developer on 3/18/25.
 //
 
