@@ -9,12 +9,9 @@ import SwiftUI
 
 
 @Observable class DaylightModel {
-    // Daylight data
     var sunriseTime: Date
     var sunsetTime: Date
-    let daylightColor = Color.orange
     
-    // Additional sun events
     var firstLightTime: Date = Date()
     var goldenHourMorningTime: Date = Date()
     var solarNoonTime: Date = Date()
@@ -22,7 +19,14 @@ import SwiftUI
     var lastLightTime: Date = Date()
     var solarMidnightTime: Date = Date()
     
-    // Initialize with default sunrise/sunset times and calculate other sun events
+    // Get positions for all sun events
+    var firstLightPosition: CGFloat { getPositionForTime(firstLightTime) }
+    var goldenHourMorningPosition: CGFloat { getPositionForTime(goldenHourMorningTime) }
+    var solarNoonPosition: CGFloat { getPositionForTime(solarNoonTime) }
+    var goldenHourEveningPosition: CGFloat { getPositionForTime(goldenHourEveningTime) }
+    var lastLightPosition: CGFloat { getPositionForTime(lastLightTime) }
+    var solarMidnightPosition: CGFloat { getPositionForTime(solarMidnightTime) }
+    
     init() {
         // Default sunrise at 6:30 AM
         var calendar = Calendar.current
@@ -191,14 +195,6 @@ import SwiftUI
         return CGFloat(totalSeconds) / CGFloat(24 * 3600)
     }
     
-    // Get positions for all sun events
-    var firstLightPosition: CGFloat { getPositionForTime(firstLightTime) }
-    var goldenHourMorningPosition: CGFloat { getPositionForTime(goldenHourMorningTime) }
-    var solarNoonPosition: CGFloat { getPositionForTime(solarNoonTime) }
-    var goldenHourEveningPosition: CGFloat { getPositionForTime(goldenHourEveningTime) }
-    var lastLightPosition: CGFloat { getPositionForTime(lastLightTime) }
-    var solarMidnightPosition: CGFloat { getPositionForTime(solarMidnightTime) }
-    
     // Get the current sun event based on time position
     func getSunEventForPosition(_ position: CGFloat) -> (name: String, time: String) {
         // Convert position to a date
@@ -347,66 +343,23 @@ struct CircularDaylightRing: View {
             .rotationEffect(.degrees(360 * Double(currentTimePosition) + 180)) // Adjusted to match new orientation
         }
         .frame(width: size, height: size)
-        .gesture(
-            DragGesture(minimumDistance: 0.0)
-                .onChanged({ value in
-                    if !isDragging {
-                        isDragging = true
-                        onDragStarted()
-                    }
-                    
-                    // Use the fixed center of the view
-                    let centerPoint = CGPoint(x: size/2, y: size/2)
-                    
-                    // Calculate the position relative to center
-                    let relativeX = value.location.x - centerPoint.x
-                    let relativeY = value.location.y - centerPoint.y
-                    
-                    // Skip if too close to center to avoid erratic behavior
-                    let distance = sqrt(pow(relativeX, 2) + pow(relativeY, 2))
-                    if distance < 10 {
-                        return
-                    }
-                    
-                    // Calculate the angle, with y inverted
-                    let angle = atan2(-relativeY, relativeX)
-                    
-                    // Convert to clockwise angle starting from top (midnight)
-                    let clockwiseAngleFrom12 = (.pi/2 - angle).truncatingRemainder(dividingBy: 2 * .pi)
-                    
-                    // Normalize to 0-2π
-                    let normalizedAngle = clockwiseAngleFrom12 < 0 ? clockwiseAngleFrom12 + 2 * .pi : clockwiseAngleFrom12
-                    
-                    // Convert to percentage (0-1)
-                    let percentage = (normalizedAngle / (2 * .pi) + 0.5).truncatingRemainder(dividingBy: 1.0)
-                    // Offset by 0.5 to align midnight at top
-                    
-                    // Get the current sun event and provide haptic feedback only when it changes
-                    let daylightModel = DaylightModel()
-                    let currentSunEvent = daylightModel.getSunEventForPosition(percentage).name
-                    
-                    if currentSunEvent != lastSunEvent && !lastSunEvent.isEmpty {
-                        let impactFeedback = UIImpactFeedbackGenerator(style: .light)
-                        impactFeedback.impactOccurred()
-                    }
-                    
-                    lastSunEvent = currentSunEvent
-                    
-                    onPositionChanged(percentage)
-                })
-                .onEnded({ _ in
-                    isDragging = false
-                    // Reset feedback tracking
-                    lastSunEvent = ""
-                    
-                    // Notify that dragging has ended
-                    onDragEnded()
-                    
-                    // Snap back to current time position
-                    withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
-                        onPositionChanged(currentTimePosition)
-                    }
-                })
+        .circularDragGesture(
+            size: size,
+            isDragging: $isDragging,
+            onDragStarted: onDragStarted,
+            onDragEnded: onDragEnded,
+            onPositionChanged: onPositionChanged,
+            handleFeedback: { percentage in
+                // Get the current sun event and provide haptic feedback only when it changes
+                let daylightModel = DaylightModel()
+                let currentSunEvent = daylightModel.getSunEventForPosition(percentage).name
+                
+                if currentSunEvent != lastSunEvent && !lastSunEvent.isEmpty {
+                    medHaptic()
+                }
+                
+                lastSunEvent = currentSunEvent
+            }
         )
     }
 }

@@ -14,7 +14,11 @@
 		8BDABB252D8A63AC002A8376 /* UV Circle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8BDABB242D8A63AC002A8376 /* UV Circle.swift */; };
 		8BDABB272D8A63B1002A8376 /* Rain Circle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8BDABB262D8A63B1002A8376 /* Rain Circle.swift */; };
 		8BDABB292D8A63BF002A8376 /* Wind Circle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8BDABB282D8A63BF002A8376 /* Wind Circle.swift */; };
-		8BDABB2D2D8A70E7002A8376 /* Components.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8BDABB2C2D8A70E7002A8376 /* Components.swift */; };
+		8BDABB3C2D8B2866002A8376 /* DragUtils.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8BDABB3B2D8B2866002A8376 /* DragUtils.swift */; };
+		8BDABB3E2D8B2925002A8376 /* RingGestures.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8BDABB3D2D8B2925002A8376 /* RingGestures.swift */; };
+		8BDABB432D8B2A1A002A8376 /* Components.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8BDABB402D8B2A1A002A8376 /* Components.swift */; };
+		8BDABB442D8B2A1A002A8376 /* RingLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8BDABB422D8B2A1A002A8376 /* RingLayout.swift */; };
+		8BDABB452D8B2A1A002A8376 /* Formatting.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8BDABB412D8B2A1A002A8376 /* Formatting.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -26,7 +30,11 @@
 		8BDABB242D8A63AC002A8376 /* UV Circle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "UV Circle.swift"; sourceTree = "<group>"; };
 		8BDABB262D8A63B1002A8376 /* Rain Circle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Rain Circle.swift"; sourceTree = "<group>"; };
 		8BDABB282D8A63BF002A8376 /* Wind Circle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Wind Circle.swift"; sourceTree = "<group>"; };
-		8BDABB2C2D8A70E7002A8376 /* Components.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Components.swift; sourceTree = "<group>"; };
+		8BDABB3B2D8B2866002A8376 /* DragUtils.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DragUtils.swift; sourceTree = "<group>"; };
+		8BDABB3D2D8B2925002A8376 /* RingGestures.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RingGestures.swift; sourceTree = "<group>"; };
+		8BDABB402D8B2A1A002A8376 /* Components.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Components.swift; sourceTree = "<group>"; };
+		8BDABB412D8B2A1A002A8376 /* Formatting.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Formatting.swift; sourceTree = "<group>"; };
+		8BDABB422D8B2A1A002A8376 /* RingLayout.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RingLayout.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -53,7 +61,9 @@
 			children = (
 				8BDABB122D89ECB1002A8376 /* CircadianApp.swift */,
 				8BDABB142D89ECB1002A8376 /* ContentView.swift */,
-				8BDABB2C2D8A70E7002A8376 /* Components.swift */,
+				8BDABB402D8B2A1A002A8376 /* Components.swift */,
+				8BDABB412D8B2A1A002A8376 /* Formatting.swift */,
+				8BDABB422D8B2A1A002A8376 /* RingLayout.swift */,
 				8BDABB362D8A80AB002A8376 /* Circles */,
 				8BDABB112D89ECB1002A8376 /* Circadian */,
 				8BDABB102D89ECB1002A8376 /* Products */,
@@ -71,6 +81,8 @@
 		8BDABB362D8A80AB002A8376 /* Circles */ = {
 			isa = PBXGroup;
 			children = (
+				8BDABB3B2D8B2866002A8376 /* DragUtils.swift */,
+				8BDABB3D2D8B2925002A8376 /* RingGestures.swift */,
 				8BDABB202D8A636D002A8376 /* Temperature.swift */,
 				8BDABB222D8A6397002A8376 /* Day Circle.swift */,
 				8BDABB242D8A63AC002A8376 /* UV Circle.swift */,
@@ -154,13 +166,17 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				8BDABB3E2D8B2925002A8376 /* RingGestures.swift in Sources */,
 				8BDABB272D8A63B1002A8376 /* Rain Circle.swift in Sources */,
 				8BDABB152D89ECB1002A8376 /* ContentView.swift in Sources */,
 				8BDABB212D8A636D002A8376 /* Temperature.swift in Sources */,
 				8BDABB292D8A63BF002A8376 /* Wind Circle.swift in Sources */,
+				8BDABB432D8B2A1A002A8376 /* Components.swift in Sources */,
+				8BDABB442D8B2A1A002A8376 /* RingLayout.swift in Sources */,
+				8BDABB452D8B2A1A002A8376 /* Formatting.swift in Sources */,
+				8BDABB3C2D8B2866002A8376 /* DragUtils.swift in Sources */,
 				8BDABB252D8A63AC002A8376 /* UV Circle.swift in Sources */,
 				8BDABB132D89ECB1002A8376 /* CircadianApp.swift in Sources */,
-				8BDABB2D2D8A70E7002A8376 /* Components.swift in Sources */,
 				8BDABB232D8A6397002A8376 /* Day Circle.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

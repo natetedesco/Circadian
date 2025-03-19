@@ -6,9 +6,6 @@
 
 import SwiftUI
 
-let size: CGFloat = 280
-let width: CGFloat = 18
-
 struct TodayHeaderView: View {
     var body: some View {
         Text("Today")
@@ -16,6 +13,7 @@ struct TodayHeaderView: View {
             .fontWeight(.semibold)
             .foregroundStyle(.secondary)
             .padding(.top, 48)
+            .padding(.bottom, 64)
     }
 }
 
@@ -33,8 +31,24 @@ struct ClockDisplay: View {
             }
             .font(model.activeRing != nil ? .system(size: 44) : .footnote)
             .fontWeight(.medium)
-            .foregroundStyle(.secondary)
             .fontDesign(.rounded)
+            .contentShape(Rectangle()) // Make the entire area tappable
+            .onTapGesture {
+                // Force update to current time by using the Date() directly
+                let calendar = Calendar.current
+                let now = Date()
+                let hour = calendar.component(.hour, from: now)
+                let minute = calendar.component(.minute, from: now)
+                let second = calendar.component(.second, from: now)
+                
+                let totalSeconds = (hour * 3600) + (minute * 60) + second
+                let currentPosition = CGFloat(totalSeconds) / CGFloat(24 * 3600)
+                
+                // Update position and deactivate ring
+                model.updateFromPosition(currentPosition)
+                model.activeRing = nil
+                medHaptic()
+            }
             
             // Show temperature under time when sliding temperature ring
             if model.activeRing == "temperature" {
@@ -47,7 +61,7 @@ struct ClockDisplay: View {
             
             // Show sun event under time when sliding daylight ring
             if model.activeRing == "daylight" {
-                let sunEvent = model.daylightModel.getSunEventForPosition(model.currentTimePercentage)
+                let sunEvent = model.daylightModel.getSunEventForPosition(model.currentTimePosition)
                 VStack(spacing: 0) {
                     Text(sunEvent.name)
                         .font(.headline)

@@ -7,13 +7,10 @@
 import SwiftUI
 
 @Observable class TemperatureModel {
-    // Temperature
     var currentTemp: Double = 72.0
     var maxTemp: Double = 85.0
     var minTemp: Double = 55.0
-    let tempColor = Color.red
     
-    // Simulated hourly temperatures, adjusted for midnight at top (index 0 = midnight)
     var hourlyTemperatures: [Double] = [
         62, 60, 58, 57, 55, 56,  // 12am-5am (midnight to pre-dawn)
         58, 60, 64, 68, 72, 76,  // 6am-11am (morning)
@@ -57,6 +54,23 @@ struct TemperatureRing: View {
     
     @State private var isDragging = false
     @State private var lastFeedbackPosition: CGFloat = -1  // Track last haptic feedback position
+    private func createTemperatureGradient() -> Gradient {
+        var stops: [Gradient.Stop] = []
+        
+        // Create gradient stops for each hour
+        for (index, temp) in temperatureData.enumerated() {
+            // Adjust position to have midnight at top (shift by 0.5)
+            let position = (CGFloat(index) / CGFloat(temperatureData.count))
+            
+            // Calculate opacity based on temperature (0 at minTemp, 1 at maxTemp)
+            let normalizedTemp = (temp - minTemp) / (maxTemp - minTemp)
+            let opacity = max(0.1, normalizedTemp) // Ensure minimum opacity of 0.1 for visibility
+            
+            stops.append(Gradient.Stop(color: color.opacity(Double(opacity)), location: position))
+        }
+        
+        return Gradient(stops: stops)
+    }
     
     var body: some View {
         ZStack {
@@ -98,83 +112,21 @@ struct TemperatureRing: View {
             .offset(y: -size / 2)
             .rotationEffect(.degrees(360 * Double(currentTimePosition) + 180)) // Adjusted to match new orientation
         }
-        .gesture(
-            DragGesture(minimumDistance: 0.0)
-                .onChanged({ value in
-                    if !isDragging {
-                        isDragging = true
-                        onDragStarted()
-                    }
-                    
-                    // Use the fixed center of the view
-                    let centerPoint = CGPoint(x: size/2, y: size/2)
-                    
-                    // Calculate the position relative to center
-                    let relativeX = value.location.x - centerPoint.x
-                    let relativeY = value.location.y - centerPoint.y
-                    
-                    // Skip if too close to center to avoid erratic behavior
-                    let distance = sqrt(pow(relativeX, 2) + pow(relativeY, 2))
-                    if distance < 10 {
-                        return
-                    }
-                    
-                    // Calculate the angle, with y inverted
-                    let angle = atan2(-relativeY, relativeX)
-                    
-                    // Convert to clockwise angle starting from top (midnight)
-                    let clockwiseAngleFrom12 = (.pi/2 - angle).truncatingRemainder(dividingBy: 2 * .pi)
-                    
-                    // Normalize to 0-2π
-                    let normalizedAngle = clockwiseAngleFrom12 < 0 ? clockwiseAngleFrom12 + 2 * .pi : clockwiseAngleFrom12
-                    
-                    // Convert to percentage (0-1)
-                    let percentage = (normalizedAngle / (2 * .pi) + 0.5).truncatingRemainder(dividingBy: 1.0)
-                    // Offset by 0.5 to align midnight at top
-                    
-                    // Provide haptic feedback every hour (1/24 of the circle)
-                    let hourPosition = Int(percentage * 24)
-                    if hourPosition != Int(lastFeedbackPosition * 24) {
-                        let impactFeedback = UIImpactFeedbackGenerator(style: .light)
-                        impactFeedback.impactOccurred()
-                        lastFeedbackPosition = percentage
-                    }
-                    
-                    onPositionChanged(percentage)
-                })
-                .onEnded({ _ in
-                    isDragging = false
-                    // Reset feedback tracking
-                    lastFeedbackPosition = -1
-                    
-                    // Notify that dragging has ended
-                    onDragEnded()
-                    
-                    // Snap back to current time position
-                    withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
-                        onPositionChanged(currentTimePosition)
-                    }
-                })
+        .circularDragGesture(
+            size: size,
+            isDragging: $isDragging,
+            onDragStarted: onDragStarted,
+            onDragEnded: onDragEnded,
+            onPositionChanged: onPositionChanged,
+            handleFeedback: { percentage in
+                // Provide haptic feedback every hour (1/24 of the circle)
+                let hourPosition = Int(percentage * 24)
+                if hourPosition != Int(lastFeedbackPosition * 24) {
+                    medHaptic()
+                    lastFeedbackPosition = percentage
+                }
+            }
         )
-    }
-    
-    // Create a gradient based on temperature data for 24 hours
-    private func createTemperatureGradient() -> Gradient {
-        var stops: [Gradient.Stop] = []
-        
-        // Create gradient stops for each hour
-        for (index, temp) in temperatureData.enumerated() {
-            // Adjust position to have midnight at top (shift by 0.5)
-            let position = (CGFloat(index) / CGFloat(temperatureData.count))
-            
-            // Calculate opacity based on temperature (0 at minTemp, 1 at maxTemp)
-            let normalizedTemp = (temp - minTemp) / (maxTemp - minTemp)
-            let opacity = max(0.1, normalizedTemp) // Ensure minimum opacity of 0.1 for visibility
-            
-            stops.append(Gradient.Stop(color: color.opacity(Double(opacity)), location: position))
-        }
-        
-        return Gradient(stops: stops)
     }
 }
 

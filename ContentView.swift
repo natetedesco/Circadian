@@ -11,20 +11,6 @@ import SwiftUI
     var currentTimePosition: CGFloat = 0
     var activeRing: String? = nil // Tracks which ring is currently being interacted with
     
-    var formattedTime: String {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "h:mm"
-        return formatter.string(from: currentTime)
-    }
-    var amPm: String {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "a"
-        return formatter.string(from: currentTime).lowercased()
-    }
-    var currentTimePercentage: CGFloat {
-        return currentTimePosition
-    }
-    
     var temperatureModel = TemperatureModel()
     var daylightModel = DaylightModel()
     
@@ -75,32 +61,13 @@ import SwiftUI
     }
 }
 
+
 struct ContentView: View {
     @Environment(Model.self) var model
-    
-    // Constants for ring sizes
-    let size: CGFloat = 280
-    let width: CGFloat = 18
-    
-    // Helper function to calculate ring size and width based on active state
-    func ringSize(for ringType: String, baseSize: CGFloat) -> CGFloat {
-        if model.activeRing == ringType {
-            return baseSize // When active, all rings grow to the maximum size
-        } else {
-            // When not active, rings have their original size
-            return ringType == "temperature" ? baseSize : baseSize - width * 2 - 16
-        }
-    }
-    
-    // Helper function to calculate ring width based on active state
-    func ringWidth(for ringType: String) -> CGFloat {
-        return width + (model.activeRing == ringType ? 4 : 0) // Increase width by 4 when active
-    }
     
     var body: some View {
         VStack {
             TodayHeaderView()
-                .padding(.bottom, 64)
             
             ///
             /// Circles
@@ -112,8 +79,8 @@ struct ContentView: View {
                     TemperatureRing(
                         size: ringSize(for: "temperature", baseSize: size),
                         lineWidth: ringWidth(for: "temperature"),
-                        color: model.temperatureModel.tempColor,
-                        currentTimePosition: model.currentTimePercentage,
+                        color: .red,
+                        currentTimePosition: model.currentTimePosition,
                         temperatureData: model.temperatureModel.hourlyTemperaturesAsCGFloat,
                         minTemp: model.temperatureModel.minHourlyTemp,
                         maxTemp: model.temperatureModel.maxHourlyTemp,
@@ -128,6 +95,9 @@ struct ContentView: View {
                         },
                         onDragEnded: {
                             withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                                // Update position back to current time
+                                model.updateCurrentTimePosition()
+                                model.updateFromPosition(model.currentTimePosition)
                                 model.activeRing = nil
                                 medHaptic()
                             }
@@ -140,8 +110,8 @@ struct ContentView: View {
                     CircularDaylightRing(
                         size: ringSize(for: "daylight", baseSize: size),
                         lineWidth: ringWidth(for: "daylight"),
-                        color: model.daylightModel.daylightColor,
-                        currentTimePosition: model.currentTimePercentage,
+                        color: .orange,
+                        currentTimePosition: model.currentTimePosition,
                         sunrisePosition: model.daylightModel.sunrisePosition,
                         sunsetPosition: model.daylightModel.sunsetPosition,
                         icon: "sun.max.fill",
@@ -155,6 +125,9 @@ struct ContentView: View {
                         },
                         onDragEnded: {
                             withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                                // Update position back to current time
+                                model.updateCurrentTimePosition()
+                                model.updateFromPosition(model.currentTimePosition)
                                 model.activeRing = nil
                                 medHaptic()
                             }
