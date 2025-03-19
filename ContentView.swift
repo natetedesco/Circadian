@@ -102,8 +102,6 @@ struct ContentView: View {
             TodayHeaderView()
                 .padding(.bottom, 64)
             
-            
-            
             ///
             /// Circles
             ZStack {
@@ -131,7 +129,7 @@ struct ContentView: View {
                         onDragEnded: {
                             withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
                                 model.activeRing = nil
-                                lightHaptic()
+                                medHaptic()
                             }
                         }
                     )
@@ -158,7 +156,7 @@ struct ContentView: View {
                         onDragEnded: {
                             withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
                                 model.activeRing = nil
-                                lightHaptic()
+                                medHaptic()
                             }
                         }
                     )
@@ -171,7 +169,13 @@ struct ContentView: View {
             /// Legend
             Card {
                 if model.activeRing == nil || model.activeRing == "temperature" {
-                    WeatherRow("Temperature:", "\(Int(model.temperatureModel.currentTemp))°", .red)
+                    if model.activeRing == "temperature" {
+                        // Show current temperature when sliding
+                        WeatherRow("Temperature:", "\(Int(model.temperatureModel.currentTemp))°", .red)
+                    } else {
+                        // Show temperature range when not sliding
+                        WeatherRow("Temperature:", "\(Int(model.temperatureModel.minHourlyTemp))° - \(Int(model.temperatureModel.maxHourlyTemp))°", .red)
+                    }
                 }
                 
                 if model.activeRing == nil {

@@ -6,13 +6,23 @@
 
 import SwiftUI
 
+
+
 @Observable class DaylightModel {
     // Daylight data
     var sunriseTime: Date
     var sunsetTime: Date
     let daylightColor = Color.orange
     
-    // Initialize with default sunrise/sunset times
+    // Additional sun events
+    var firstLightTime: Date = Date()
+    var goldenHourMorningTime: Date = Date()
+    var solarNoonTime: Date = Date()
+    var goldenHourEveningTime: Date = Date()
+    var lastLightTime: Date = Date()
+    var solarMidnightTime: Date = Date()
+    
+    // Initialize with default sunrise/sunset times and calculate other sun events
     init() {
         // Default sunrise at 6:30 AM
         var calendar = Calendar.current
@@ -28,6 +38,36 @@ import SwiftUI
         sunsetComponents.minute = 30
         sunsetComponents.second = 0
         sunsetTime = calendar.date(from: sunsetComponents) ?? Date()
+        
+        // Now that all properties are initialized, calculate sun events
+        calculateSunEvents()
+    }
+    
+    // Calculate all sun events based on sunrise and sunset times
+    func calculateSunEvents() {
+        let calendar = Calendar.current
+        
+        // First light (civil dawn) - about 30 minutes before sunrise
+        firstLightTime = calendar.date(byAdding: .minute, value: -30, to: sunriseTime) ?? sunriseTime
+        
+        // Golden hour morning - starts at sunrise, lasts about 60 minutes
+        goldenHourMorningTime = sunriseTime
+        
+        // Solar noon - midpoint between sunrise and sunset
+        let sunriseSunsetDuration = calendar.dateComponents([.second], from: sunriseTime, to: sunsetTime).second ?? 0
+        solarNoonTime = calendar.date(byAdding: .second, value: sunriseSunsetDuration / 2, to: sunriseTime) ?? sunriseTime
+        
+        // Golden hour evening - about 60 minutes before sunset
+        goldenHourEveningTime = calendar.date(byAdding: .minute, value: -60, to: sunsetTime) ?? sunsetTime
+        
+        // Last light (civil dusk) - about 30 minutes after sunset
+        lastLightTime = calendar.date(byAdding: .minute, value: 30, to: sunsetTime) ?? sunsetTime
+        
+        // Solar midnight - midpoint between sunset and next day's sunrise (opposite of solar noon)
+        // First get the next day's sunrise by adding 24 hours to current sunrise
+        let nextDaySunrise = calendar.date(byAdding: .hour, value: 24, to: sunriseTime) ?? sunriseTime
+        let sunsetToNextSunriseDuration = calendar.dateComponents([.second], from: sunsetTime, to: nextDaySunrise).second ?? 0
+        solarMidnightTime = calendar.date(byAdding: .second, value: sunsetToNextSunriseDuration / 2, to: sunsetTime) ?? sunsetTime
     }
     
     // Get sunrise position (0-1) on the 24-hour circle
@@ -67,6 +107,8 @@ import SwiftUI
         
         if let newTime = calendar.date(from: components) {
             sunriseTime = newTime
+            // Update all sun events when sunrise changes
+            calculateSunEvents()
         }
     }
     
@@ -85,6 +127,8 @@ import SwiftUI
         
         if let newTime = calendar.date(from: components) {
             sunsetTime = newTime
+            // Update all sun events when sunset changes
+            calculateSunEvents()
         }
     }
     
@@ -135,6 +179,101 @@ import SwiftUI
     var formattedDaylightRange: String {
         return "\(formattedSunriseTime) - \(formattedSunsetTime)"
     }
+    
+    // Helper method to get position (0-1) for any time
+    func getPositionForTime(_ time: Date) -> CGFloat {
+        let calendar = Calendar.current
+        let hour = calendar.component(.hour, from: time)
+        let minute = calendar.component(.minute, from: time)
+        let second = calendar.component(.second, from: time)
+        
+        let totalSeconds = (hour * 3600) + (minute * 60) + second
+        return CGFloat(totalSeconds) / CGFloat(24 * 3600)
+    }
+    
+    // Get positions for all sun events
+    var firstLightPosition: CGFloat { getPositionForTime(firstLightTime) }
+    var goldenHourMorningPosition: CGFloat { getPositionForTime(goldenHourMorningTime) }
+    var solarNoonPosition: CGFloat { getPositionForTime(solarNoonTime) }
+    var goldenHourEveningPosition: CGFloat { getPositionForTime(goldenHourEveningTime) }
+    var lastLightPosition: CGFloat { getPositionForTime(lastLightTime) }
+    var solarMidnightPosition: CGFloat { getPositionForTime(solarMidnightTime) }
+    
+    // Get the current sun event based on time position
+    func getSunEventForPosition(_ position: CGFloat) -> (name: String, time: String) {
+        // Convert position to a date
+        let secondsInDay = 24 * 60 * 60
+        let totalSeconds = Int(position * Double(secondsInDay))
+        let hours = totalSeconds / 3600
+        let minutes = (totalSeconds % 3600) / 60
+        
+        let calendar = Calendar.current
+        var components = calendar.dateComponents([.year, .month, .day], from: Date())
+        components.hour = hours
+        components.minute = minutes
+        components.second = 0
+        
+        guard let currentTime = calendar.date(from: components) else {
+            return ("Unknown", "")
+        }
+        
+        // Format the time
+        let formatter = DateFormatter()
+        formatter.dateFormat = "h:mm a"
+        let timeString = formatter.string(from: currentTime)
+        
+        // Determine which sun event is closest
+        let timePosition = getPositionForTime(currentTime)
+        
+        // Check exact matches first (or very close)
+        let threshold: CGFloat = 0.005 // About 7 minutes
+        
+        if abs(timePosition - firstLightPosition) < threshold {
+            return ("First Light", timeString)
+        } else if abs(timePosition - goldenHourMorningPosition) < threshold {
+            return ("Morning Golden Hour", timeString)
+        } else if abs(timePosition - sunrisePosition) < threshold {
+            return ("Sunrise", timeString)
+        } else if abs(timePosition - solarNoonPosition) < threshold {
+            return ("Solar Noon", timeString)
+        } else if abs(timePosition - goldenHourEveningPosition) < threshold {
+            return ("Evening Golden Hour", timeString)
+        } else if abs(timePosition - sunsetPosition) < threshold {
+            return ("Sunset", timeString)
+        } else if abs(timePosition - lastLightPosition) < threshold {
+            return ("Last Light", timeString)
+        } else if abs(timePosition - solarMidnightPosition) < threshold {
+            return ("Solar Midnight", timeString)
+        }
+        
+        // Determine which specific sun event period we're in
+        if (timePosition > lastLightPosition && timePosition < 1.0) || (timePosition >= 0 && timePosition < firstLightPosition) {
+            // Between last light and first light
+            return ("Night", timeString)
+        } else if timePosition < sunrisePosition {
+            // Between first light and sunrise
+            return ("First Light", timeString)
+        } else if timePosition < solarNoonPosition {
+            // Between sunrise and solar noon
+            if timePosition < sunrisePosition + 0.04 { // About an hour after sunrise
+                return ("Morning Golden Hour", timeString)
+            } else {
+                return ("Sunrise", timeString)
+            }
+        } else if timePosition < goldenHourEveningPosition {
+            // Between solar noon and evening golden hour
+            return ("Solar Noon", timeString)
+        } else if timePosition < sunsetPosition {
+            // Between evening golden hour and sunset
+            return ("Evening Golden Hour", timeString)
+        } else if timePosition < lastLightPosition {
+            // Between sunset and last light
+            return ("Sunset", timeString)
+        } else {
+            // Should never reach here, but just in case
+            return ("Last Light", timeString)
+        }
+    }
 }
 
 struct CircularDaylightRing: View {
@@ -150,7 +289,17 @@ struct CircularDaylightRing: View {
     var onDragEnded: () -> Void = {}
     
     @State private var isDragging = false
-    @State private var lastFeedbackPosition: CGFloat = -1
+    @State private var lastSunEvent: String = ""  // Track last sun event for haptic feedback
+    
+    // Calculate the peak sun time (midpoint between sunrise and sunset)
+    var peakSunPosition: CGFloat {
+        // Handle case where sunrise is after sunset (crosses midnight)
+        if sunrisePosition > sunsetPosition {
+            return (sunrisePosition + (sunsetPosition + 1.0)) / 2.0
+        } else {
+            return (sunrisePosition + sunsetPosition) / 2.0
+        }
+    }
     
     var body: some View {
         ZStack {
@@ -158,16 +307,31 @@ struct CircularDaylightRing: View {
             Circle()
                 .stroke(.gray.opacity(0.1), style: StrokeStyle(lineWidth: lineWidth, lineCap: .round))
             
-            // Daylight arc
+            // Daylight arc with gradient
+            let startAngle = Angle(degrees: 0)
+            let endAngle = Angle(degrees: 360)
+            
             Circle()
                 .trim(from: sunrisePosition, to: sunsetPosition)
-                .stroke(color, style: StrokeStyle(lineWidth: lineWidth, lineCap: .round))
+                .stroke(
+                    AngularGradient(
+                        stops: [
+                            .init(color: color.opacity(0.1), location: 0),
+                            .init(color: color.opacity(1.0), location: 0.5),
+                            .init(color: color.opacity(0.1), location: 1)
+                        ],
+                        center: .center,
+                        startAngle: startAngle,
+                        endAngle: endAngle
+                    ),
+                    style: StrokeStyle(lineWidth: lineWidth, lineCap: .round)
+                )
                 .rotationEffect(.degrees(90)) // Adjust so 0 is at top (12 o'clock position)
             
             // Current time position indicator with icon
             ZStack {
                 Circle()
-                    .fill(.thickMaterial)
+                    .fill(.regularMaterial)
                     .colorScheme(.light)
                     .frame(width: lineWidth * 1.2, height: lineWidth * 1.2)
                     .shadow(color: .black.opacity(0.2), radius: isDragging ? 4 : 2, x: 0, y: 0)
@@ -217,20 +381,23 @@ struct CircularDaylightRing: View {
                     let percentage = (normalizedAngle / (2 * .pi) + 0.5).truncatingRemainder(dividingBy: 1.0)
                     // Offset by 0.5 to align midnight at top
                     
-                    // Provide haptic feedback every hour (1/24 of the circle)
-                    let hourPosition = Int(percentage * 24)
-                    if hourPosition != Int(lastFeedbackPosition * 24) {
+                    // Get the current sun event and provide haptic feedback only when it changes
+                    let daylightModel = DaylightModel()
+                    let currentSunEvent = daylightModel.getSunEventForPosition(percentage).name
+                    
+                    if currentSunEvent != lastSunEvent && !lastSunEvent.isEmpty {
                         let impactFeedback = UIImpactFeedbackGenerator(style: .light)
                         impactFeedback.impactOccurred()
-                        lastFeedbackPosition = percentage
                     }
+                    
+                    lastSunEvent = currentSunEvent
                     
                     onPositionChanged(percentage)
                 })
                 .onEnded({ _ in
                     isDragging = false
                     // Reset feedback tracking
-                    lastFeedbackPosition = -1
+                    lastSunEvent = ""
                     
                     // Notify that dragging has ended
                     onDragEnded()

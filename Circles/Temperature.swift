@@ -83,7 +83,7 @@ struct TemperatureRing: View {
             // Current time position indicator with icon
             ZStack {
                 Circle()
-                    .fill(.thickMaterial)
+                    .fill(.regularMaterial)
                     .colorScheme(.light)
                     .frame(width: lineWidth * 1.2, height: lineWidth * 1.2)
                     .shadow(color: .black.opacity(0.2), radius: isDragging ? 4 : 2, x: 0, y: 0)

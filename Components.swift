@@ -23,16 +23,46 @@ struct ClockDisplay: View {
     @Environment(Model.self) var model
     
     var body: some View {
-        HStack(spacing: 0) {
-            Text(model.formattedTime)
-            Text(model.amPm)
-                .font(model.activeRing != nil ? .caption : .caption2)
+        VStack(spacing: 4) {
+            // Time display
+            HStack(spacing: 0) {
+                Text(model.formattedTime)
+                    .monospacedDigit()
+                Text(model.amPm)
+                    .font(model.activeRing != nil ? .caption : .caption2)
+            }
+            .font(model.activeRing != nil ? .system(size: 44) : .footnote)
+            .fontWeight(.medium)
+            .foregroundStyle(.secondary)
+            .fontDesign(.rounded)
+            
+            // Show temperature under time when sliding temperature ring
+            if model.activeRing == "temperature" {
+                Text("\(Int(model.temperatureModel.currentTemp))°")
+                    .font(.title)
+                    .foregroundColor(.red)
+                    .fontWeight(.medium)
+                    .transition(.opacity)
+            }
+            
+            // Show sun event under time when sliding daylight ring
+            if model.activeRing == "daylight" {
+                let sunEvent = model.daylightModel.getSunEventForPosition(model.currentTimePercentage)
+                VStack(spacing: 0) {
+                    Text(sunEvent.name)
+                        .font(.headline)
+                        .foregroundColor(.orange)
+                        .fontWeight(.medium)
+                        .fontDesign(.rounded)
+                    
+                        // No second clock display
+                }
+                .transition(.opacity)
+            }
         }
-        .font(model.activeRing != nil ? .largeTitle : .footnote)
-        .fontWeight(.medium)
-        .foregroundStyle(.secondary)
-        .fontDesign(.rounded)
         .animation(.spring(response: 0.3, dampingFraction: 0.7), value: model.activeRing)
+        .frame(width: 200, height: 200)
+        .padding(.bottom, model.activeRing == nil ? 0 : -36)
     }
 }
 
@@ -51,6 +81,7 @@ struct WeatherRow: View {
         HStack {
             Text(label)
                 .foregroundColor(.white)
+                .fontDesign(.rounded)
             Spacer()
             Text(value)
                 .foregroundColor(color)
@@ -65,7 +96,6 @@ struct Card<Content: View>: View {
         VStack(alignment: .leading, spacing: 20) {
             content
         }
-        .fontDesign(.rounded)
         .padding()
         .padding(.vertical, 8)
         .background(Color.black.opacity(0.6))
@@ -95,8 +125,8 @@ struct ContentContainerModifier: ViewModifier {
     }
 }
 
-func lightHaptic() {
-    let generator = UIImpactFeedbackGenerator(style: .light)
+func medHaptic() {
+    let generator = UIImpactFeedbackGenerator(style: .medium)
     generator.prepare()
     generator.impactOccurred()
 }
