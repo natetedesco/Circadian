@@ -52,6 +52,8 @@ struct TemperatureRing: View {
     var maxTemp: CGFloat
     var icon: String
     var onPositionChanged: (CGFloat) -> Void
+    var onDragStarted: () -> Void = {}
+    var onDragEnded: () -> Void = {}
     
     @State private var isDragging = false
     @State private var lastFeedbackPosition: CGFloat = -1  // Track last haptic feedback position
@@ -99,7 +101,10 @@ struct TemperatureRing: View {
         .gesture(
             DragGesture(minimumDistance: 0.0)
                 .onChanged({ value in
-                    isDragging = true
+                    if !isDragging {
+                        isDragging = true
+                        onDragStarted()
+                    }
                     
                     // Use the fixed center of the view
                     let centerPoint = CGPoint(x: size/2, y: size/2)
@@ -141,6 +146,9 @@ struct TemperatureRing: View {
                     isDragging = false
                     // Reset feedback tracking
                     lastFeedbackPosition = -1
+                    
+                    // Notify that dragging has ended
+                    onDragEnded()
                     
                     // Snap back to current time position
                     withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {

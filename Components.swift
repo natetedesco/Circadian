@@ -23,16 +23,17 @@ struct ClockDisplay: View {
     @Environment(Model.self) var model
     
     var body: some View {
-            HStack(spacing: 0) {
-                Text(model.formattedTime)
-                Text(model.amPm)
-                    .font(.caption2)
-            }
-            .font(.footnote)
-            .fontWeight(.medium)
-            .foregroundStyle(.secondary)
-            .fontDesign(.rounded)
+        HStack(spacing: 0) {
+            Text(model.formattedTime)
+            Text(model.amPm)
+                .font(model.activeRing != nil ? .caption : .caption2)
         }
+        .font(model.activeRing != nil ? .largeTitle : .footnote)
+        .fontWeight(.medium)
+        .foregroundStyle(.secondary)
+        .fontDesign(.rounded)
+        .animation(.spring(response: 0.3, dampingFraction: 0.7), value: model.activeRing)
+    }
 }
 
 struct WeatherRow: View {
@@ -92,4 +93,10 @@ struct ContentContainerModifier: ViewModifier {
             .ignoresSafeArea()
             .preferredColorScheme(.dark)
     }
+}
+
+func lightHaptic() {
+    let generator = UIImpactFeedbackGenerator(style: .light)
+    generator.prepare()
+    generator.impactOccurred()
 }

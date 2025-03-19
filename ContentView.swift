@@ -9,6 +9,8 @@ import SwiftUI
 @Observable class Model {
     var currentTime = Date()
     var currentTimePosition: CGFloat = 0
+    var activeRing: String? = nil // Tracks which ring is currently being interacted with
+    
     var formattedTime: String {
         let formatter = DateFormatter()
         formatter.dateFormat = "h:mm"
@@ -76,11 +78,31 @@ import SwiftUI
 struct ContentView: View {
     @Environment(Model.self) var model
     
+    // Constants for ring sizes
+    let size: CGFloat = 280
+    let width: CGFloat = 18
+    
+    // Helper function to calculate ring size and width based on active state
+    func ringSize(for ringType: String, baseSize: CGFloat) -> CGFloat {
+        if model.activeRing == ringType {
+            return baseSize // When active, all rings grow to the maximum size
+        } else {
+            // When not active, rings have their original size
+            return ringType == "temperature" ? baseSize : baseSize - width * 2 - 16
+        }
+    }
+    
+    // Helper function to calculate ring width based on active state
+    func ringWidth(for ringType: String) -> CGFloat {
+        return width + (model.activeRing == ringType ? 4 : 0) // Increase width by 4 when active
+    }
+    
     var body: some View {
         VStack {
             TodayHeaderView()
+                .padding(.bottom, 64)
             
-            Spacer()
+            
             
             ///
             /// Circles
@@ -88,33 +110,59 @@ struct ContentView: View {
                 ClockDisplay()
                 
                 // Temperature Ring (outermost)
-                TemperatureRing(
-                    size: size,
-                    lineWidth: width,
-                    color: model.temperatureModel.tempColor,
-                    currentTimePosition: model.currentTimePercentage,
-                    temperatureData: model.temperatureModel.hourlyTemperaturesAsCGFloat,
-                    minTemp: model.temperatureModel.minHourlyTemp,
-                    maxTemp: model.temperatureModel.maxHourlyTemp,
-                    icon: "thermometer.high",
-                    onPositionChanged: { newPosition in
-                        model.updateFromPosition(newPosition)
-                    }
-                )
+                if model.activeRing == nil || model.activeRing == "temperature" {
+                    TemperatureRing(
+                        size: ringSize(for: "temperature", baseSize: size),
+                        lineWidth: ringWidth(for: "temperature"),
+                        color: model.temperatureModel.tempColor,
+                        currentTimePosition: model.currentTimePercentage,
+                        temperatureData: model.temperatureModel.hourlyTemperaturesAsCGFloat,
+                        minTemp: model.temperatureModel.minHourlyTemp,
+                        maxTemp: model.temperatureModel.maxHourlyTemp,
+                        icon: "thermometer.high",
+                        onPositionChanged: { newPosition in
+                            model.updateFromPosition(newPosition)
+                        },
+                        onDragStarted: {
+                            withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                                model.activeRing = "temperature"
+                            }
+                        },
+                        onDragEnded: {
+                            withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                                model.activeRing = nil
+                                lightHaptic()
+                            }
+                        }
+                    )
+                }
                 
                 // Daylight Ring (inner ring)
-                CircularDaylightRing(
-                    size: size - width * 2 - 16, // Make it smaller than temperature ring
-                    lineWidth: width,
-                    color: model.daylightModel.daylightColor,
-                    currentTimePosition: model.currentTimePercentage,
-                    sunrisePosition: model.daylightModel.sunrisePosition,
-                    sunsetPosition: model.daylightModel.sunsetPosition,
-                    icon: "sun.max",
-                    onPositionChanged: { newPosition in
-                        model.updateFromPosition(newPosition)
-                    }
-                )
+                if model.activeRing == nil || model.activeRing == "daylight" {
+                    CircularDaylightRing(
+                        size: ringSize(for: "daylight", baseSize: size),
+                        lineWidth: ringWidth(for: "daylight"),
+                        color: model.daylightModel.daylightColor,
+                        currentTimePosition: model.currentTimePercentage,
+                        sunrisePosition: model.daylightModel.sunrisePosition,
+                        sunsetPosition: model.daylightModel.sunsetPosition,
+                        icon: "sun.max.fill",
+                        onPositionChanged: { newPosition in
+                            model.updateFromPosition(newPosition)
+                        },
+                        onDragStarted: {
+                            withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                                model.activeRing = "daylight"
+                            }
+                        },
+                        onDragEnded: {
+                            withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                                model.activeRing = nil
+                                lightHaptic()
+                            }
+                        }
+                    )
+                }
             }
             
             Spacer()
@@ -122,12 +170,19 @@ struct ContentView: View {
             ///
             /// Legend
             Card {
-                WeatherRow("Temperature:", "\(Int(model.temperatureModel.currentTemp))°", .red)
+                if model.activeRing == nil || model.activeRing == "temperature" {
+                    WeatherRow("Temperature:", "\(Int(model.temperatureModel.currentTemp))°", .red)
+                }
                 
-                Divider().padding(.horizontal, -16)
+                if model.activeRing == nil {
+                    Divider().padding(.horizontal, -16)
+                }
                 
-                WeatherRow("Daylight:", "\(model.daylightModel.formattedDaylightRange)", .orange)
+                if model.activeRing == nil || model.activeRing == "daylight" {
+                    WeatherRow("Daylight:", "\(model.daylightModel.formattedDaylightRange)", .orange)
+                }
             }
+            .animation(.spring(response: 0.2, dampingFraction: 0.8), value: model.activeRing)
         }
     }
 }
