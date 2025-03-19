@@ -11,6 +11,10 @@ import SwiftUI
     var maxTemp: Double = 85.0
     var minTemp: Double = 55.0
     
+    // Access global layout constants
+    var size: CGFloat { Circadian.size }
+    var width: CGFloat { Circadian.width }
+    
     var hourlyTemperatures: [Double] = [
         62, 60, 58, 57, 55, 56,  // 12am-5am (midnight to pre-dawn)
         58, 60, 64, 68, 72, 76,  // 6am-11am (morning)
@@ -72,26 +76,41 @@ struct TemperatureRing: View {
         return Gradient(stops: stops)
     }
     
+    @Environment(Model.self) private var model
+    
+    // Calculate the gap as a percentage based on the ring size and active state
+    private var midnightGap: CGFloat {
+        // Use expanded gap size when ring is active
+        let gapSize = model.activeRing == "temperature" ? midnightGapExpandedPixels : midnightGapPixels
+        
+        // Convert fixed pixel gap to a percentage of the circumference
+        // Circumference = π * diameter = π * size
+        // Gap percentage = gap size / circumference
+        return gapSize / (CGFloat.pi * size)
+    }
+    
     var body: some View {
         ZStack {
-            // Background ring
+            // Background ring with gap at midnight
             Circle()
-                .trim(from: 0, to: 1)
-                .stroke(Color.gray.opacity(0.1), style: StrokeStyle(lineWidth: lineWidth, lineCap: .round))
+                .trim(from: midnightGap, to: 1.0 - midnightGap)
+                .stroke(Color.gray.opacity(0.05), style: StrokeStyle(lineWidth: lineWidth, lineCap: .round))
+                .rotationEffect(.degrees(90)) // Adjust so 0 is at top (12 o'clock position)
                 .frame(width: size)
             
-            // Temperature gradient ring
+            // Temperature gradient ring with gap at midnight
             Circle()
-                .trim(from: 0, to: 1)
+                .trim(from: midnightGap, to: 1.0 - midnightGap)
                 .stroke(
                     AngularGradient(
                         gradient: createTemperatureGradient(),
                         center: .center,
-                        startAngle: .degrees(90),    // Start at top (midnight)
-                        endAngle: .degrees(90+360)   // Full circle
+                        startAngle: .degrees(0),
+                        endAngle: .degrees(360)
                     ),
                     style: StrokeStyle(lineWidth: lineWidth, lineCap: .round)
                 )
+                .rotationEffect(.degrees(90)) // Adjust so 0 is at top (12 o'clock position)
                 .frame(width: size)
             
             // Current time position indicator with icon

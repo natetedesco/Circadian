@@ -29,7 +29,7 @@ struct ClockDisplay: View {
                 Text(model.amPm)
                     .font(model.activeRing != nil ? .caption : .caption2)
             }
-            .font(model.activeRing != nil ? .system(size: 44) : .caption2)
+            .font(model.activeRing != nil ? .system(size: 44) : .caption)
             .fontWeight(.medium)
             .foregroundStyle(.secondary)
             .fontDesign(.rounded)
@@ -123,12 +123,13 @@ struct WeatherRow: View {
     var body: some View {
         HStack {
             Text(label)
-                .foregroundColor(.white)
+                .foregroundColor(.white.opacity(0.8))
                 .fontDesign(.rounded)
+                .fontWeight(.medium)
             Spacer()
             Text(value)
                 .foregroundColor(color)
-                .bold()
+                .fontWeight(.semibold)
         }
     }
 }
@@ -141,7 +142,7 @@ struct Card<Content: View>: View {
         }
         .padding()
         .padding(.vertical, 8)
-        .background(Color.black.opacity(0.6))
+        .background(Color.black.opacity(0.5))
         .cornerRadius(32)
         .font(.callout)
     }
@@ -150,7 +151,7 @@ struct Card<Content: View>: View {
 struct ContentContainerModifier: ViewModifier {
     func body(content: Content) -> some View {
         content
-            .padding()
+            .padding(.horizontal)
             .frame(maxWidth: .infinity, alignment: .center)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .padding()

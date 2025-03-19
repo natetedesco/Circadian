@@ -18,6 +18,10 @@ struct WindPeriod {
     var currentWindSpeed: Double = 0.0
     var windDirection: String = "N"
     
+    // Access to global layout constants
+    var size: CGFloat { Circadian.size }
+    var width: CGFloat { Circadian.width }
+    
     // Threshold for showing wind on the ring (in mph)
     let windThreshold: Double = 5.0
     
@@ -46,49 +50,146 @@ struct WindPeriod {
     }
     
     // Get wind periods (start and end positions of significant wind)
+    // Calculate the midnight gap as a percentage for the model
+    var midnightGapPercentage: CGFloat {
+        // The wind ring is the innermost ring with size = size - width * 8 - 64
+        let windRingSize: CGFloat = size - width * 8 - 64 // Using global constants from RingLayout.swift
+        return midnightGapPixels / (CGFloat.pi * windRingSize)
+    }
+    
     var windPeriods: [WindPeriod] {
-        var periods: [WindPeriod] = []
-        var inWindPeriod = false
-        var currentPeriod: WindPeriod? = nil
-        var maxIntensity: CGFloat = 0.0
+        // Print the wind speeds for debugging
+        print("💨 Wind speeds: \(hourlyWindSpeeds.map { String(format: "%.1f", $0) })")
         
-        // Find all wind periods above threshold
-        for (index, speed) in hourlyWindSpeeds.enumerated() {
-            let position = CGFloat(index) / CGFloat(hourlyWindSpeeds.count)
+        // Find continuous periods of significant wind for the current day (midnight to midnight)
+        var periods: [WindPeriod] = []
+        var currentPeriodStart: Int? = nil
+        var currentMaxSpeed = 0.0
+        
+        // Get the midnight gap percentage
+        let midnightGap = midnightGapPercentage
+        
+        // Function to add a period to our list with midnight gap enforcement
+        func addPeriod(start: Int, end: Int, maxSpeed: Double) {
+            let startPosition = CGFloat(start) / 24.0
+            let endPosition = CGFloat(end + 1) / 24.0  // Add 1 to include the full hour
+            let intensity = min(1.0, maxSpeed / maxWindSpeed)
             
-            if speed > windThreshold && !inWindPeriod {
-                // Start of a wind period
-                inWindPeriod = true
-                let normalizedIntensity = min(1.0, speed / maxWindSpeed)
-                currentPeriod = WindPeriod(startPosition: position, endPosition: position, intensity: CGFloat(normalizedIntensity))
-                maxIntensity = CGFloat(normalizedIntensity)
-            } else if speed > windThreshold && inWindPeriod {
-                // Continuing wind period
-                currentPeriod?.endPosition = position
-                let normalizedIntensity = min(1.0, speed / maxWindSpeed)
-                maxIntensity = max(maxIntensity, CGFloat(normalizedIntensity))
-            } else if speed <= windThreshold && inWindPeriod {
-                // End of a wind period
-                if let period = currentPeriod {
-                    var finalPeriod = period
-                    finalPeriod.intensity = maxIntensity
-                    periods.append(finalPeriod)
+            // Check if this period crosses midnight
+            if start == 0 || end == 23 {
+                if start == 0 && end == 23 {
+                    // Period spans the entire day, split it at midnight
+                    periods.append(WindPeriod(
+                        startPosition: startPosition + midnightGap,
+                        endPosition: 1.0 - midnightGap,
+                        intensity: CGFloat(intensity)
+                    ))
+                    periods.append(WindPeriod(
+                        startPosition: 0.0 + midnightGap,
+                        endPosition: endPosition - midnightGap,
+                        intensity: CGFloat(intensity)
+                    ))
+                } else if start == 0 {
+                    // Period starts at midnight
+                    periods.append(WindPeriod(
+                        startPosition: startPosition + midnightGap,
+                        endPosition: endPosition,
+                        intensity: CGFloat(intensity)
+                    ))
+                } else if end == 23 {
+                    // Period ends at midnight
+                    periods.append(WindPeriod(
+                        startPosition: startPosition,
+                        endPosition: endPosition - midnightGap,
+                        intensity: CGFloat(intensity)
+                    ))
                 }
-                inWindPeriod = false
-                currentPeriod = nil
-                maxIntensity = 0.0
+            } else {
+                // Normal period that doesn't touch midnight
+                periods.append(WindPeriod(
+                    startPosition: startPosition,
+                    endPosition: endPosition,
+                    intensity: CGFloat(intensity)
+                ))
             }
         }
         
-        // Add the last period if we're still in one
-        if inWindPeriod, let period = currentPeriod {
-            var finalPeriod = period
-            finalPeriod.intensity = maxIntensity
-            periods.append(finalPeriod)
+        // Scan through all 24 hours
+        for hour in 0..<24 {
+            if hourlyWindSpeeds[hour] > windThreshold {
+                // This hour has significant wind
+                if currentPeriodStart == nil {
+                    // Start a new period
+                    currentPeriodStart = hour
+                    currentMaxSpeed = hourlyWindSpeeds[hour]
+                } else {
+                    // Continue the current period
+                    currentMaxSpeed = max(currentMaxSpeed, hourlyWindSpeeds[hour])
+                }
+            } else if currentPeriodStart != nil {
+                // This hour doesn't have significant wind, but we were in a period
+                // End the current period
+                addPeriod(start: currentPeriodStart!, end: hour - 1, maxSpeed: currentMaxSpeed)
+                currentPeriodStart = nil
+                currentMaxSpeed = 0.0
+            }
         }
         
+        // If we ended the 24 hours still in a wind period, add it
+        if let start = currentPeriodStart {
+            addPeriod(start: start, end: 23, maxSpeed: currentMaxSpeed)
+        }
+        
+        // Now merge any periods that are close to each other (within 3 hours)
+        // But don't merge across midnight
+        if periods.count > 1 {
+            var mergedPeriods: [WindPeriod] = []
+            var currentMergedPeriod = periods[0]
+            
+            for i in 1..<periods.count {
+                let nextPeriod = periods[i]
+                
+                // Skip merging if either period touches midnight
+                let currentTouchesMidnight = currentMergedPeriod.endPosition > 0.99 || currentMergedPeriod.startPosition < 0.01
+                let nextTouchesMidnight = nextPeriod.endPosition > 0.99 || nextPeriod.startPosition < 0.01
+                
+                if currentTouchesMidnight || nextTouchesMidnight {
+                    // Don't merge periods that touch midnight
+                    mergedPeriods.append(currentMergedPeriod)
+                    currentMergedPeriod = nextPeriod
+                    continue
+                }
+                
+                // Calculate the gap between periods in hours
+                let currentEndHour = Int(currentMergedPeriod.endPosition * 24)
+                let nextStartHour = Int(nextPeriod.startPosition * 24)
+                let gap = nextStartHour - currentEndHour
+                
+                if gap <= 3 {
+                    // Merge the periods
+                    currentMergedPeriod = WindPeriod(
+                        startPosition: currentMergedPeriod.startPosition,
+                        endPosition: nextPeriod.endPosition,
+                        intensity: max(currentMergedPeriod.intensity, nextPeriod.intensity)
+                    )
+                    print("🌬️ Merging periods with gap of \(gap) hours")
+                } else {
+                    // Add the current merged period and start a new one
+                    mergedPeriods.append(currentMergedPeriod)
+                    currentMergedPeriod = nextPeriod
+                }
+            }
+            
+            // Add the last merged period
+            mergedPeriods.append(currentMergedPeriod)
+            periods = mergedPeriods
+        }
+        
+        print("🌬️ Created \(periods.count) wind periods")
         return periods
     }
+    
+
     
     // Update wind data based on time
     func updateWindFromTime(_ timePosition: CGFloat) {
@@ -117,11 +218,26 @@ struct WindRing: View {
     @State private var isDragging = false
     @State private var lastFeedbackPosition: CGFloat = -1
     
+    @Environment(Model.self) private var model
+    
+    // Calculate the gap as a percentage based on the ring size and active state
+    private var midnightGap: CGFloat {
+        // Use expanded gap size when ring is active
+        let gapSize = model.activeRing == "wind" ? midnightGapExpandedPixels : midnightGapPixels
+        
+        // Convert fixed pixel gap to a percentage of the circumference
+        // Circumference = π * diameter = π * size
+        // Gap percentage = gap size / circumference
+        return gapSize / (CGFloat.pi * size)
+    }
+    
     var body: some View {
         ZStack {
-            // Background track
+            // Background track with gap at midnight
             Circle()
+                .trim(from: midnightGap, to: 1.0 - midnightGap)
                 .stroke(.gray.opacity(0.1), style: StrokeStyle(lineWidth: lineWidth, lineCap: .round))
+                .rotationEffect(.degrees(90)) // Adjust so 0 is at top (12 o'clock position)
                 .frame(width: size)
             
             // Draw each wind period as a separate arc

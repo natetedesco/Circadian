@@ -7,8 +7,12 @@
 import SwiftUI
 
 // Global constants for ring dimensions
-let size: CGFloat = 280
+let size: CGFloat = 296
 let width: CGFloat = 16
+
+// Global constants for midnight gap
+let midnightGapPixels: CGFloat = 12 // Default gap size
+let midnightGapExpandedPixels: CGFloat = 20 // Gap size when ring is expanded
 
 // Extension for ring layout calculations
 extension ContentView {

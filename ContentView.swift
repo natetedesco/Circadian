@@ -17,8 +17,47 @@ import SwiftUI
     var rainModel = RainModel()
     var windModel = WindModel()
     
+    // Weather data manager for real weather data
+    var weatherDataManager = WeatherDataManager()
+    var isLoadingWeather = false
+    var weatherError: String? = nil
+    var lastWeatherUpdate: Date? = nil
+    
     init() {
+        // Calculate the current time position
         updateCurrentTimePosition()
+        
+        // Update the models with the current time
+        temperatureModel.updateTemperatureFromTime(currentTimePosition)
+        uvModel.updateUVFromTime(currentTimePosition)
+        rainModel.updateRainFromTime(currentTimePosition)
+        windModel.updateWindFromTime(currentTimePosition)
+    }
+    
+    // Connect the location manager to the weather data manager
+    func setupLocationManager(_ locationManager: LocationManager) {
+        weatherDataManager.setLocationManager(locationManager)
+    }
+    
+    // Fetch real weather data
+    func fetchWeatherData() async {
+        isLoadingWeather = true
+        weatherError = nil
+        
+        // Pass all our models to the weather data manager
+        await weatherDataManager.fetchWeatherData(
+            temperatureModel: temperatureModel,
+            daylightModel: daylightModel,
+            uvModel: uvModel,
+            rainModel: rainModel,
+            windModel: windModel
+        )
+        
+        isLoadingWeather = weatherDataManager.isLoading
+        weatherError = weatherDataManager.errorMessage
+        lastWeatherUpdate = weatherDataManager.lastUpdated
+        
+        // Update the UI after fetching weather
         updateModelsFromTime()
     }
     
@@ -70,6 +109,7 @@ import SwiftUI
 
 struct ContentView: View {
     @Environment(Model.self) var model
+    @State private var showWeatherKitTest = false
     
     var body: some View {
         VStack {
@@ -300,6 +340,13 @@ struct ContentView: View {
                 }
             }
             .animation(.spring(response: 0.2, dampingFraction: 0.8), value: model.activeRing)
+            
+            Text("Powered by  Weather")
+                .font(.caption2)
+                .fontWeight(.medium)
+                .foregroundStyle(.secondary)
+                .padding(.top, 12)
+                .padding(.bottom)
         }
     }
 }

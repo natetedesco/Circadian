@@ -12,6 +12,10 @@ import SwiftUI
     var maxUVIndex: Double = 11.0
     var minUVIndex: Double = 0.0
     
+    // Access to global layout constants
+    var size: CGFloat { Circadian.size }
+    var width: CGFloat { Circadian.width }
+    
     var hourlyUVIndices: [Double] = [
         0, 0, 0, 0, 0, 0, 0,    // 12am-6am (midnight to dawn)
         0, 1, 2, 4, 6, 9,       // 7am-12pm (morning to noon)
@@ -98,12 +102,25 @@ struct UVRing: View {
         return 0.5
     }
     
+    // Calculate the gap as a percentage based on the ring size
+    private var midnightGap: CGFloat {
+        // Convert fixed pixel gap to a percentage of the circumference
+        // The UV ring size is: size - width * 4 - 32
+        let uvRingSize: CGFloat = size - width * 4 - 32 // Using global constants from RingLayout.swift
+        return midnightGapPixels / (CGFloat.pi * uvRingSize)
+    }
+    
     // Calculate the start and end positions for the UV range
     private var uvStartPosition: CGFloat {
         // Find the first position where UV index > 0
         for (index, uv) in uvData.enumerated() {
             if uv > 0 {
-                return CGFloat(index) / CGFloat(uvData.count)
+                let position = CGFloat(index) / CGFloat(uvData.count)
+                // Add gap if close to midnight
+                if index == 0 {
+                    return position + midnightGap
+                }
+                return position
             }
         }
         return 0.25 // Default to 6am if not found
@@ -113,17 +130,37 @@ struct UVRing: View {
         // Find the last position where UV index > 0
         for index in stride(from: uvData.count - 1, through: 0, by: -1) {
             if uvData[index] > 0 {
-                return CGFloat(index) / CGFloat(uvData.count)
+                let position = CGFloat(index) / CGFloat(uvData.count)
+                // Add gap if close to midnight
+                if index == uvData.count - 1 {
+                    return position - midnightGap
+                }
+                return position
             }
         }
         return 0.75 // Default to 6pm if not found
     }
     
+    @Environment(Model.self) private var model
+    
+    // Calculate the gap as a percentage based on the ring size and active state
+    private var viewMidnightGap: CGFloat {
+        // Use expanded gap size when ring is active
+        let gapSize = model.activeRing == "uv" ? midnightGapExpandedPixels : midnightGapPixels
+        
+        // Convert fixed pixel gap to a percentage of the circumference
+        // Circumference = π * diameter = π * size
+        // Gap percentage = gap size / circumference
+        return gapSize / (CGFloat.pi * size)
+    }
+    
     var body: some View {
         ZStack {
-            // Background track
+            // Background track with gap at midnight
             Circle()
+                .trim(from: viewMidnightGap, to: 1.0 - viewMidnightGap)
                 .stroke(.gray.opacity(0.1), style: StrokeStyle(lineWidth: lineWidth, lineCap: .round))
+                .rotationEffect(.degrees(90)) // Adjust so 0 is at top (12 o'clock position)
                 .frame(width: size)
             
             // UV arc with gradient

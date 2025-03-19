@@ -19,6 +19,10 @@
 		8BDABB432D8B2A1A002A8376 /* Components.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8BDABB402D8B2A1A002A8376 /* Components.swift */; };
 		8BDABB442D8B2A1A002A8376 /* RingLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8BDABB422D8B2A1A002A8376 /* RingLayout.swift */; };
 		8BDABB452D8B2A1A002A8376 /* Formatting.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8BDABB412D8B2A1A002A8376 /* Formatting.swift */; };
+		8BDABB552D8B3E0D002A8376 /* LocationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8BDABB542D8B3E0D002A8376 /* LocationManager.swift */; };
+		8BDABB582D8B3E1A002A8376 /* WeatherKitTest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8BDABB562D8B3E1A002A8376 /* WeatherKitTest.swift */; };
+		8BDABB592D8B3E1A002A8376 /* WeatherService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8BDABB572D8B3E1A002A8376 /* WeatherService.swift */; };
+		8BDABB5B2D8B3F22002A8376 /* WeatherDataManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8BDABB5A2D8B3F22002A8376 /* WeatherDataManager.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -35,6 +39,10 @@
 		8BDABB402D8B2A1A002A8376 /* Components.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Components.swift; sourceTree = "<group>"; };
 		8BDABB412D8B2A1A002A8376 /* Formatting.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Formatting.swift; sourceTree = "<group>"; };
 		8BDABB422D8B2A1A002A8376 /* RingLayout.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RingLayout.swift; sourceTree = "<group>"; };
+		8BDABB542D8B3E0D002A8376 /* LocationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocationManager.swift; sourceTree = "<group>"; };
+		8BDABB562D8B3E1A002A8376 /* WeatherKitTest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeatherKitTest.swift; sourceTree = "<group>"; };
+		8BDABB572D8B3E1A002A8376 /* WeatherService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeatherService.swift; sourceTree = "<group>"; };
+		8BDABB5A2D8B3F22002A8376 /* WeatherDataManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeatherDataManager.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -60,6 +68,10 @@
 			isa = PBXGroup;
 			children = (
 				8BDABB122D89ECB1002A8376 /* CircadianApp.swift */,
+				8BDABB542D8B3E0D002A8376 /* LocationManager.swift */,
+				8BDABB562D8B3E1A002A8376 /* WeatherKitTest.swift */,
+				8BDABB5A2D8B3F22002A8376 /* WeatherDataManager.swift */,
+				8BDABB572D8B3E1A002A8376 /* WeatherService.swift */,
 				8BDABB142D89ECB1002A8376 /* ContentView.swift */,
 				8BDABB402D8B2A1A002A8376 /* Components.swift */,
 				8BDABB412D8B2A1A002A8376 /* Formatting.swift */,
@@ -175,7 +187,11 @@
 				8BDABB442D8B2A1A002A8376 /* RingLayout.swift in Sources */,
 				8BDABB452D8B2A1A002A8376 /* Formatting.swift in Sources */,
 				8BDABB3C2D8B2866002A8376 /* DragUtils.swift in Sources */,
+				8BDABB582D8B3E1A002A8376 /* WeatherKitTest.swift in Sources */,
+				8BDABB592D8B3E1A002A8376 /* WeatherService.swift in Sources */,
 				8BDABB252D8A63AC002A8376 /* UV Circle.swift in Sources */,
+				8BDABB552D8B3E0D002A8376 /* LocationManager.swift in Sources */,
+				8BDABB5B2D8B3F22002A8376 /* WeatherDataManager.swift in Sources */,
 				8BDABB132D89ECB1002A8376 /* CircadianApp.swift in Sources */,
 				8BDABB232D8A6397002A8376 /* Day Circle.swift in Sources */,
 			);
@@ -308,23 +324,25 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = Circadian/Circadian.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "\"Circadian/Preview Content\"";
 				DEVELOPMENT_TEAM = AMU2LP62W2;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Get the weather for your location.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = nathanieltedesco.Circadian;
+				PRODUCT_BUNDLE_IDENTIFIER = com.NathanielTedesco.Circadian;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
@@ -337,23 +355,25 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = Circadian/Circadian.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "\"Circadian/Preview Content\"";
 				DEVELOPMENT_TEAM = AMU2LP62W2;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Get the weather for your location.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = nathanieltedesco.Circadian;
+				PRODUCT_BUNDLE_IDENTIFIER = com.NathanielTedesco.Circadian;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;

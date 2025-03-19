@@ -19,6 +19,17 @@ import SwiftUI
     var lastLightTime: Date = Date()
     var solarMidnightTime: Date = Date()
     
+    // Access to global layout constants
+    var size: CGFloat { Circadian.size }
+    var width: CGFloat { Circadian.width }
+    
+    // Calculate the midnight gap as a percentage for the model
+    var midnightGapPercentage: CGFloat {
+        // The daylight ring size is: size - width * 2 - 16
+        let daylightRingSize: CGFloat = size - width * 2 - 16 // Using global constants from RingLayout.swift
+        return midnightGapPixels / (CGFloat.pi * daylightRingSize)
+    }
+    
     // Get positions for all sun events
     var firstLightPosition: CGFloat { getPositionForTime(firstLightTime) }
     var goldenHourMorningPosition: CGFloat { getPositionForTime(goldenHourMorningTime) }
@@ -296,11 +307,26 @@ struct CircularDaylightRing: View {
         }
     }
     
+    @Environment(Model.self) private var model
+    
+    // Calculate the gap as a percentage based on the ring size and active state
+    private var midnightGap: CGFloat {
+        // Use expanded gap size when ring is active
+        let gapSize = model.activeRing == "daylight" ? midnightGapExpandedPixels : midnightGapPixels
+        
+        // Convert fixed pixel gap to a percentage of the circumference
+        // Circumference = π * diameter = π * size
+        // Gap percentage = gap size / circumference
+        return gapSize / (CGFloat.pi * size)
+    }
+    
     var body: some View {
         ZStack {
-            // Background track
+            // Background track with gap at midnight
             Circle()
+                .trim(from: midnightGap, to: 1.0 - midnightGap)
                 .stroke(.gray.opacity(0.1), style: StrokeStyle(lineWidth: lineWidth, lineCap: .round))
+                .rotationEffect(.degrees(90)) // Adjust so 0 is at top (12 o'clock position))
             
             // Daylight arc with gradient
             let startAngle = Angle(degrees: 0)
