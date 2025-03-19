@@ -168,15 +168,14 @@ import SwiftUI
     // Formatted sunrise time
     var formattedSunriseTime: String {
         let formatter = DateFormatter()
-        formatter.dateFormat = "h:mm a"
-        return formatter.string(from: sunriseTime)
+        formatter.dateFormat = "h:mma"
+        return formatter.string(from: sunriseTime).lowercased()
     }
-    
-    // Formatted sunset time
+
     var formattedSunsetTime: String {
         let formatter = DateFormatter()
-        formatter.dateFormat = "h:mm a"
-        return formatter.string(from: sunsetTime)
+        formatter.dateFormat = "h:mma"
+        return formatter.string(from: sunsetTime).lowercased()
     }
     
     // Formatted daylight range

@@ -13,6 +13,9 @@ import SwiftUI
     
     var temperatureModel = TemperatureModel()
     var daylightModel = DaylightModel()
+    var uvModel = UVModel()
+    var rainModel = RainModel()
+    var windModel = WindModel()
     
     init() {
         updateCurrentTimePosition()
@@ -33,6 +36,9 @@ import SwiftUI
     // Update all models based on current time
     func updateModelsFromTime() {
         temperatureModel.updateTemperatureFromTime(currentTimePosition)
+        uvModel.updateUVFromTime(currentTimePosition)
+        rainModel.updateRainFromTime(currentTimePosition)
+        windModel.updateWindFromTime(currentTimePosition)
     }
     
     // Update time and all models based on position
@@ -105,7 +111,7 @@ struct ContentView: View {
                     )
                 }
                 
-                // Daylight Ring (inner ring)
+                // Daylight Ring (middle ring)
                 if model.activeRing == nil || model.activeRing == "daylight" {
                     CircularDaylightRing(
                         size: ringSize(for: "daylight", baseSize: size),
@@ -114,13 +120,102 @@ struct ContentView: View {
                         currentTimePosition: model.currentTimePosition,
                         sunrisePosition: model.daylightModel.sunrisePosition,
                         sunsetPosition: model.daylightModel.sunsetPosition,
-                        icon: "sun.max.fill",
+                        icon: "sunrise.fill",
                         onPositionChanged: { newPosition in
                             model.updateFromPosition(newPosition)
                         },
                         onDragStarted: {
                             withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
                                 model.activeRing = "daylight"
+                            }
+                        },
+                        onDragEnded: {
+                            withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                                // Update position back to current time
+                                model.updateCurrentTimePosition()
+                                model.updateFromPosition(model.currentTimePosition)
+                                model.activeRing = nil
+                                medHaptic()
+                            }
+                        }
+                    )
+                }
+                
+                // UV Ring
+                if model.activeRing == nil || model.activeRing == "uv" {
+                    UVRing(
+                        size: ringSize(for: "uv", baseSize: size),
+                        lineWidth: ringWidth(for: "uv"),
+                        color: .yellow,
+                        currentTimePosition: model.currentTimePosition,
+                        uvData: model.uvModel.hourlyUVIndicesAsCGFloat,
+                        minUV: model.uvModel.minHourlyUV,
+                        maxUV: model.uvModel.maxHourlyUV,
+                        icon: "sun.max.fill",
+                        onPositionChanged: { newPosition in
+                            model.updateFromPosition(newPosition)
+                        },
+                        onDragStarted: {
+                            withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                                model.activeRing = "uv"
+                            }
+                        },
+                        onDragEnded: {
+                            withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                                // Update position back to current time
+                                model.updateCurrentTimePosition()
+                                model.updateFromPosition(model.currentTimePosition)
+                                model.activeRing = nil
+                                medHaptic()
+                            }
+                        }
+                    )
+                }
+                
+                // Rain Ring
+                if model.activeRing == nil || model.activeRing == "rain" {
+                    RainRing(
+                        size: ringSize(for: "rain", baseSize: size),
+                        lineWidth: ringWidth(for: "rain"),
+                        color: .blue,
+                        currentTimePosition: model.currentTimePosition,
+                        rainPeriods: model.rainModel.rainPeriods,
+                        icon: "cloud.rain.fill",
+                        onPositionChanged: { newPosition in
+                            model.updateFromPosition(newPosition)
+                        },
+                        onDragStarted: {
+                            withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                                model.activeRing = "rain"
+                            }
+                        },
+                        onDragEnded: {
+                            withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                                // Update position back to current time
+                                model.updateCurrentTimePosition()
+                                model.updateFromPosition(model.currentTimePosition)
+                                model.activeRing = nil
+                                medHaptic()
+                            }
+                        }
+                    )
+                }
+                
+                // Wind Ring (innermost ring)
+                if model.activeRing == nil || model.activeRing == "wind" {
+                    WindRing(
+                        size: ringSize(for: "wind", baseSize: size),
+                        lineWidth: ringWidth(for: "wind"),
+                        color: .mint,
+                        currentTimePosition: model.currentTimePosition,
+                        windPeriods: model.windModel.windPeriods,
+                        icon: "wind",
+                        onPositionChanged: { newPosition in
+                            model.updateFromPosition(newPosition)
+                        },
+                        onDragStarted: {
+                            withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                                model.activeRing = "wind"
                             }
                         },
                         onDragEnded: {
@@ -157,6 +252,51 @@ struct ContentView: View {
                 
                 if model.activeRing == nil || model.activeRing == "daylight" {
                     WeatherRow("Daylight:", "\(model.daylightModel.formattedDaylightRange)", .orange)
+                }
+                
+                if model.activeRing == nil {
+                    Divider().padding(.horizontal, -16)
+                }
+                
+                if model.activeRing == nil || model.activeRing == "uv" {
+                    if model.activeRing == "uv" {
+                        // Show current UV index and risk level when sliding
+                        let riskLevel = model.uvModel.getUVRiskLevel(model.uvModel.currentUVIndex)
+                        WeatherRow("UV Index:", "\(Int(model.uvModel.currentUVIndex)) (\(riskLevel))", .yellow)
+                    } else {
+                        // Show UV index range when not sliding
+                        WeatherRow("UV Index:", "\(Int(model.uvModel.maxHourlyUV)) Peak", .yellow)
+                    }
+                }
+                
+                if model.activeRing == nil {
+                    Divider().padding(.horizontal, -16)
+                }
+                
+                if model.activeRing == nil || model.activeRing == "rain" {
+                    if model.activeRing == "rain" {
+                        // Show current rain probability when sliding
+                        WeatherRow("Rain:", model.rainModel.formattedRainProbability(model.rainModel.currentRainProbability), .blue)
+                    } else {
+                        // Show overall rain chance for the day
+                        let maxRainChance = model.rainModel.hourlyRainProbabilities.max() ?? 0.0
+                        WeatherRow("Rain:", model.rainModel.formattedRainProbability(maxRainChance), .blue)
+                    }
+                }
+                
+                if model.activeRing == nil {
+                    Divider().padding(.horizontal, -16)
+                }
+                
+                if model.activeRing == nil || model.activeRing == "wind" {
+                    if model.activeRing == "wind" {
+                        // Show current wind info when sliding
+                        WeatherRow("Wind:", model.windModel.formattedWindInfo(model.windModel.currentWindSpeed, direction: model.windModel.windDirection), .mint)
+                    } else {
+                        // Show max wind speed for the day
+                        let maxWindSpeed = model.windModel.hourlyWindSpeeds.max() ?? 0.0
+                        WeatherRow("Wind:", "\(Int(maxWindSpeed)) mph max", .mint)
+                    }
                 }
             }
             .animation(.spring(response: 0.2, dampingFraction: 0.8), value: model.activeRing)

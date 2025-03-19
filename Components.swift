@@ -11,9 +11,9 @@ struct TodayHeaderView: View {
         Text("Today")
             .font(.title3)
             .fontWeight(.semibold)
-            .foregroundStyle(.secondary)
+            .foregroundStyle(.primary)
             .padding(.top, 48)
-            .padding(.bottom, 64)
+            .padding(.bottom, 48)
     }
 }
 
@@ -29,8 +29,9 @@ struct ClockDisplay: View {
                 Text(model.amPm)
                     .font(model.activeRing != nil ? .caption : .caption2)
             }
-            .font(model.activeRing != nil ? .system(size: 44) : .footnote)
+            .font(model.activeRing != nil ? .system(size: 44) : .caption2)
             .fontWeight(.medium)
+            .foregroundStyle(.secondary)
             .fontDesign(.rounded)
             .contentShape(Rectangle()) // Make the entire area tappable
             .onTapGesture {
@@ -72,6 +73,34 @@ struct ClockDisplay: View {
                         // No second clock display
                 }
                 .transition(.opacity)
+            }
+            
+            // Show UV index under time when sliding UV ring
+            if model.activeRing == "uv" {
+                let riskLevel = model.uvModel.getUVRiskLevel(model.uvModel.currentUVIndex)
+                Text("\(Int(model.uvModel.currentUVIndex)) (\(riskLevel))")
+                    .font(.headline)
+                    .foregroundColor(.yellow)
+                    .fontWeight(.medium)
+                    .transition(.opacity)
+            }
+            
+            // Show rain probability under time when sliding rain ring
+            if model.activeRing == "rain" {
+                Text(model.rainModel.formattedRainProbability(model.rainModel.currentRainProbability))
+                    .font(.headline)
+                    .foregroundColor(.blue)
+                    .fontWeight(.medium)
+                    .transition(.opacity)
+            }
+            
+            // Show wind information under time when sliding wind ring
+            if model.activeRing == "wind" {
+                Text(model.windModel.formattedWindInfo(model.windModel.currentWindSpeed, direction: model.windModel.windDirection))
+                    .font(.headline)
+                    .foregroundColor(.mint)
+                    .fontWeight(.medium)
+                    .transition(.opacity)
             }
         }
         .animation(.spring(response: 0.3, dampingFraction: 0.7), value: model.activeRing)
@@ -122,13 +151,12 @@ struct ContentContainerModifier: ViewModifier {
     func body(content: Content) -> some View {
         content
             .padding()
-            .padding(.bottom, 8)
             .frame(maxWidth: .infinity, alignment: .center)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .padding()
             .background(
                 RadialGradient(
-                    gradient: Gradient(colors: [.blue.opacity(0.3), .cyan.opacity(0.2), .white.opacity(0.05)]),
+                    gradient: Gradient(colors: [.blue.opacity(0.3), .white.opacity(0.05)]),
                     center: .bottom,
                     startRadius: 0,
                     endRadius: 500

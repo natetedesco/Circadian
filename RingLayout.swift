@@ -8,7 +8,7 @@ import SwiftUI
 
 // Global constants for ring dimensions
 let size: CGFloat = 280
-let width: CGFloat = 18
+let width: CGFloat = 16
 
 // Extension for ring layout calculations
 extension ContentView {
@@ -17,8 +17,21 @@ extension ContentView {
         if model.activeRing == ringType {
             return baseSize // When active, all rings grow to the maximum size
         } else {
-            // When not active, rings have their original size
-            return ringType == "temperature" ? baseSize : baseSize - width * 2 - 16
+            // When not active, rings have their original size based on their position
+            switch ringType {
+            case "temperature":
+                return baseSize
+            case "daylight":
+                return baseSize - width * 2 - 16
+            case "uv":
+                return baseSize - width * 4 - 32
+            case "rain":
+                return baseSize - width * 6 - 48
+            case "wind":
+                return baseSize - width * 8 - 64
+            default:
+                return baseSize
+            }
         }
     }
     
